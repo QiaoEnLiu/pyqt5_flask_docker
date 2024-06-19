@@ -3,6 +3,9 @@ from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLa
 import requests
 import subprocess
 import time
+import platform
+
+system_type = platform.system()
 
 class App(QWidget):
     def __init__(self):
@@ -11,6 +14,7 @@ class App(QWidget):
         self.initUI()
         self.docker_process = None
         self.start_flask_api()
+        self.dockerCommand=None
 
     def initUI(self):
         self.setWindowTitle('PyQt5 and Flask API')
@@ -40,8 +44,12 @@ class App(QWidget):
         return False
 
     def start_flask_api(self):
+        if system_type == 'Linux':
+            self.dockerCommand = ['sudo','docker', 'compose', 'up', '--build']
+        else:
+            self.dockerCommand = ['docker', 'compose', 'up', '--build']
         self.docker_process = subprocess.Popen(
-            ['docker', 'compose', 'up', '--build'],
+            self.dockerCommand, # 前面加sudo用於linux
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE
         )
@@ -52,8 +60,11 @@ class App(QWidget):
         # if self.docker_process:
         #     self.docker_process.terminate()
         #     self.docker_process.wait()
-    
-        subprocess.run(['docker','compose', 'stop'])
+        if system_type == 'Linux':
+            self.dockerCommand = ['sudo', 'docker','compose', 'stop']
+        else:
+            self.dockerCommand = ['docker','compose', 'stop']
+        subprocess.run(self.dockerCommand) # 前面加sudo用於linux
     
 
     def getData(self):
@@ -65,6 +76,7 @@ class App(QWidget):
     def closeEvent(self, event):
         self.stop_flask_api()
         event.accept()
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
